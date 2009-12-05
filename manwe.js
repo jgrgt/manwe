@@ -32,6 +32,23 @@ var position = function(x, y) {
 	return that;
 };
 
+var connection = function(from, to) {
+    var that = {
+        from: from,
+        to: to
+    }
+
+    that.draw = function(ctx) {
+        var fromCenter = that.from.getCenter();
+        var toCenter = that.to.getCenter();
+        ctx.beginPath();
+        ctx.moveTo(fromCenter.x, fromCenter.y);
+        ctx.lineTo(toCenter.x, toCenter.y);
+        ctx.stroke();
+    }
+    return that;
+}
+
 var node = function(iconPath) {
 	var that = {
 		pos: position(0, 0)
@@ -41,32 +58,87 @@ var node = function(iconPath) {
 	icon.src = iconPath;
 
 	that.contains = function (pos) {
-		return true;
 		return (that.pos.x < pos.x && pos.x <= (that.pos.x + icon.width) && that.pos.y < pos.y && pos.y <= (that.pos.y + icon.height));
 	};
 
 	that.draw = function(ctx) {
 		ctx.drawImage(icon, that.pos.x, that.pos.y);
 	};
+
+    that.getCenter = function() {
+        var x = that.pos.x + (icon.width / 2);
+        var y = that.pos.y + (icon.height / 2);
+        return position(x, y);
+    };
 	return that;
 };
+
+var networkNode = function(iconPath) {
+    var that = node(iconPath);
+    return that;
+};
+
+var vnet = function() {
+    var VNET_ICON = "icons/32x32/network-wired.png";
+    var that = networkNode(VNET_ICON);
+    return that;
+};
+
+var machineNode = function(iconPath) {
+    var that = node(iconPath);
+    var connections = [];
+
+    that.connect = function(otherNode) {
+        connections[connections.length] = connection(that, otherNode);
+    }
+
+    var nodeDraw = that.draw;
+    that.draw = function(ctx) {
+        var i;
+        for (i = 0; i < connections.length; i += 1) {
+            var connection = connections[i];
+            connection.draw(ctx);
+        }
+        nodeDraw(ctx);
+    }
+    return that;
+}
+
+var serverNode = function() {
+	var SERVER_ICON = "icons/32x32/network-server.png";
+    var that = machineNode(SERVER_ICON);
+    return that;
+}
+
 
 window.onload = function () {
 	var canvas = document.getElementById('canvas');
 	var ctx = canvas.getContext('2d');
-	var SERVER_ICON = "icons/32x32/network-server.png";
-	var node1 = node(SERVER_ICON);
-	var nodes = [node1];
 	var dragStart;
 	var dragNode;
+
+	var server1 = serverNode();
+	var server2 = serverNode();
+	var machines = [server1, server2];
+
+    var network1 = vnet();
+    var network2 = vnet();
+    var networks = [network1, network2];
+
+    server1.connect(network1);
 
 	var draw = function() {
 		ctx.clearRect(0, 0, 800, 400);
 		var i;
-		for (i = 0; i < nodes.length; i += 1) {
-			var node = nodes[i];
-			node.draw(ctx);
+		for (i = 0; i < machines.length; i += 1) {
+			var machine = machines[i];
+			machine.draw(ctx);
 		}
+
+        for (i = 0; i < networks.length; i += 1) {
+            var network = networks[i];
+            network.draw(ctx);
+        }
 	}
 
 	var getRelativePosition = function (e) {
@@ -80,6 +152,7 @@ window.onload = function () {
 	var onMouseDown = function (e) {
 		pos = getRelativePosition(e);
         log("Mouse down on " + pos);
+        var nodes = networks.concat(machines);
 		var i;
 		for (i = 0; i < nodes.length; i += 1) {
 			var node = nodes[i];
