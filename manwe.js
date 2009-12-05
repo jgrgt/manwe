@@ -54,7 +54,7 @@ var node = function(iconPath) {
 window.onload = function () {
 	var canvas = document.getElementById('canvas');
 	var ctx = canvas.getContext('2d');
-	var SERVER_ICON = "icons/tango-icon-theme/32x32/places/network-server.png";
+	var SERVER_ICON = "icons/32x32/network-server.png";
 	var node1 = node(SERVER_ICON);
 	var nodes = [node1];
 	var dragStart;
